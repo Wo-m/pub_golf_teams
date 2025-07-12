@@ -8,25 +8,22 @@ def team_avg(team):
     calc and store team means
     team: list[tuple(name, score)]
     """
-    p0 = team[0]
-    p1 = team[1]
-    p2 = team[2]
-    average = (p0[1] + p1[1] + p2[1])/3
-    TEAM_MEANS[p0[0], p1[0], p2[0]] = average # also store these for later
+    average = np.sum([p[1] for p in team])/4
+    TEAM_MEANS[tuple(p[0] for p in team)] = average # also store these for later
     return average
 
 def valid_team(team):
     """
     from previous results I know the final team means
-    are in the range of 6.3->6.7, so can remove any teams outside this range
-    will result in 72 teams vs 455 (15c3) teams
+    are in the range of 6.2->6.6, so can remove any teams outside this range
+    will result in 356 teams vs 1820 (16c4) teams
     which makes a huge diff down the line when evaluating team combinations
     its roughly 1 minute per 100 million team combinations:
-    72c5  = 13,991,544      -> 0.14 minutes
-    455c5 = 158,964,146,341 -> 1589.64 minutes
+    356c4  = 658,029,065     -> 6.58 minutes
+    1820c4 = 455,660,782,395 -> 4556.61 minutes (3 days)
     """
     avg = team_avg(team)
-    if avg < 6.3 or avg > 6.7:
+    if avg < 6.2 or avg > 6.6:
         return False
     return True
 
@@ -34,7 +31,7 @@ def valid_team(team):
 def valid_teams_combiniation(team_comb):
     """
     is this team combination valid?
-    i.e. groups of 5 teams s.t. no person is in 2 teams
+    i.e. 4 teams s.t. no person is in 2 teams
     """
     people_set = set()
     for team in team_comb:
@@ -48,13 +45,10 @@ def standard_deviation(team_comb):
     """
     compute standard deviation of team means for this combination of teams
     """
-    assert(len(team_comb) == 5)
+    assert(len(team_comb) == 4)
     averages = []
     for team in team_comb:
-        p0 = team[0] # tuple(name, score)
-        p1 = team[1]
-        p2 = team[2]
-        average = TEAM_MEANS.get((p0[0], p1[0], p2[0]), None)
+        average = TEAM_MEANS.get(tuple(p[0] for p in team), None)
         averages.append(average)
     return np.std(averages)
 
@@ -71,13 +65,14 @@ for name in means.index:
 
 # all possible 3 person teams
 teams = []
-for team in itertools.combinations(people, 3):
+for team in itertools.combinations(people, 4):
     if valid_team(team):
         teams.append(team)
+print(len(teams))
 
 # get all valid team combinations
 teams_combs = []
-for team in itertools.combinations(teams, 5):
+for team in itertools.combinations(teams, 4):
     if valid_teams_combiniation(team):
         teams_combs.append(team)
 
@@ -94,6 +89,6 @@ print(f'minimise sd between team means: sd({min_sd})')
 for team in min_sd_teams:
     print('members', [p[0] for p in team])
     print('scores', [float(p[1]) for p in team])
-    print('average', np.sum([p[1] for p in team])/3)
+    print('average', TEAM_MEANS[tuple(p[0] for p in team)])
     print()
 
